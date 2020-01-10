@@ -1,13 +1,19 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'Mypy'
+description: 'Run Mypy and annotate code with errors'
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  github-token:
+    description: 'GitHub token to use for authentication against the GitHub API'
     required: true
-    default: '1000'
+  max-errors:
+    description: "Max number of warnings before reporting the check as failed"
+    required: true
+    default: 0
+  paths:
+    description: "Paths to run mypy on"
+    default: "."
 outputs:
-  time: # output will be available to future steps 
-    description: 'The message to output'
+  num-errors: 
+    description: 'Number of errors reported'
 runs:
   using: 'node12'
   main: 'dist/index.js'
