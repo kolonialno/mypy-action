@@ -24,7 +24,7 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   // Create the check run and the first 50 annotations
   const result = await octokit.checks.create({
     ...github.context.repo,
-    name: "MyPy",
+    name: "Mypy",
     head_sha: github.context.sha,
     completed_at: new Date().toISOString(),
     conclusion: conclusion,
@@ -50,6 +50,27 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   }
 }
 
+async function getModifiedPythonFiles(againstBranch) {
+  const files = [];
+  const addFile = file => {
+    if (file.endsWith(".py")) {
+      files.push(file);
+    }
+  };
+
+  const options = {
+    listeners: {
+      stdline: addFile
+    },
+    ignoreReturnCode: false
+    // silent: true
+  };
+
+  await exec.exec("git", ["diff", againstBranch, "--name-only"], options);
+
+  return files;
+}
+
 async function run() {
   try {
     const maxErrors = parseInt(
@@ -61,7 +82,11 @@ async function run() {
     const githubToken = core.getInput("github-token", { required: true });
     const octokit = new github.GitHub(githubToken);
 
-    const paths = (core.getInput("paths") || ".").split(" ");
+    const diffAgainstBranch = core.getInput("diff-against-branch");
+
+    const paths = diffAgainstBranch
+      ? await getModifiedPythonFiles(diffAgainstBranch)
+      : (core.getInput("paths") || ".").split(" ");
 
     const regex = /^(?<file>[^:]+):(?<line>\d+):(?<column>\d+): (?<type>\w+): (?<message>.*)\s+\[(?<error_code>[a-z-]+)\]$/;
     const annotations = [];
@@ -72,6 +97,12 @@ async function run() {
       // Skip lines that do not match
       if (match === null) {
         console.log("Unable to parse line:", line);
+        return;
+      }
+
+      // If we're diffing against a reference branch, ignore any errors in
+      // files that have not been modified.
+      if (diffAgainstBranch && !paths.includes(match.groups.file)) {
         return;
       }
 
