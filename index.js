@@ -24,7 +24,7 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   // Create the check run and the first 50 annotations
   const result = await octokit.checks.create({
     ...github.context.repo,
-    name: "MyPy",
+    name: "Mypy",
     head_sha: github.context.sha,
     completed_at: new Date().toISOString(),
     conclusion: conclusion,
@@ -62,8 +62,8 @@ async function getModifiedPythonFiles(againstBranch) {
     listeners: {
       stdline: addFile
     },
-    ignoreReturnCode: false,
-    silent: true
+    ignoreReturnCode: false
+    // silent: true
   };
 
   await exec.exec("git", ["diff", againstBranch, "--name-only"], options);
