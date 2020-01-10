@@ -12,7 +12,7 @@ inputs:
     description: "Paths to run mypy on"
     default: "."
   diff-against-branch:
-    description: "Only lint files that have been modified from the given branch"
+    description: "Only check files that have been modified from the given branch"
 outputs:
   num-errors: 
     description: 'Number of errors reported'
