@@ -100,6 +100,12 @@ async function run() {
         return;
       }
 
+      // If we're diffing against a reference branch, ignore any errors in
+      // files that have not been modified.
+      if (diffAgainstBranch && !paths.includes(match.groups.file)) {
+        return;
+      }
+
       annotations.push({
         path: match.groups.file,
         start_line: parseInt(match.groups.line, 10),

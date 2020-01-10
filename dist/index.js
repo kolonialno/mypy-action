@@ -817,7 +817,7 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   // Create the check run and the first 50 annotations
   const result = await octokit.checks.create({
     ...github.context.repo,
-    name: "MyPy",
+    name: "Mypy",
     head_sha: github.context.sha,
     completed_at: new Date().toISOString(),
     conclusion: conclusion,
@@ -855,8 +855,8 @@ async function getModifiedPythonFiles(againstBranch) {
     listeners: {
       stdline: addFile
     },
-    ignoreReturnCode: false,
-    silent: true
+    ignoreReturnCode: false
+    // silent: true
   };
 
   await exec.exec("git", ["diff", againstBranch, "--name-only"], options);
@@ -890,6 +890,12 @@ async function run() {
       // Skip lines that do not match
       if (match === null) {
         console.log("Unable to parse line:", line);
+        return;
+      }
+
+      // If we're diffing against a reference branch, ignore any errors in
+      // files that have not been modified.
+      if (diffAgainstBranch && !paths.includes(match.groups.file)) {
         return;
       }
 
