@@ -810,7 +810,7 @@ function typeToAnnotationLevel(type) {
   }
 }
 
-async function submitResult(githubToken, octokit, conclusion, annotations) {
+async function submitResult(octokit, checkName, conclusion, annotations) {
   const output = {
     title: "Mypy",
     summary: `There are ${annotations.length} mypy warnings`
@@ -819,7 +819,7 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   // Create the check run and the first 50 annotations
   const result = await octokit.checks.create({
     ...github.context.repo,
-    name: "Mypy",
+    name: checkName,
     head_sha: github.context.sha,
     completed_at: new Date().toISOString(),
     conclusion: conclusion,
@@ -872,6 +872,8 @@ async function run() {
       core.getInput("max-errors", { required: true }),
       10
     );
+
+    const checkName = core.getInput("check-name", { required: true });
 
     // Initialize the octokit library
     const githubToken = core.getInput("github-token", { required: true });
@@ -938,7 +940,7 @@ async function run() {
 
     const conclusion = numErrors > maxErrors ? "failure" : "success";
 
-    await submitResult(githubToken, octokit, conclusion, annotations);
+    await submitResult(octokit, checkName,conclusion, annotations);
   } catch (error) {
     console.log(error);
     core.setFailed(error.message);
