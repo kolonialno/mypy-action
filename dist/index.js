@@ -810,7 +810,7 @@ function typeToAnnotationLevel(type) {
   }
 }
 
-async function submitResult(githubToken, octokit, conclusion, annotations) {
+async function submitResult(octokit, checkName, conclusion, annotations) {
   const output = {
     title: "Mypy",
     summary: `There are ${annotations.length} mypy warnings`
@@ -819,7 +819,7 @@ async function submitResult(githubToken, octokit, conclusion, annotations) {
   // Create the check run and the first 50 annotations
   const result = await octokit.checks.create({
     ...github.context.repo,
-    name: "Mypy",
+    name: checkName,
     head_sha: github.context.sha,
     completed_at: new Date().toISOString(),
     conclusion: conclusion,
@@ -872,6 +872,8 @@ async function run() {
       core.getInput("max-errors", { required: true }),
       10
     );
+
+    const checkName = core.getInput("check-name", { required: true });
 
     // Initialize the octokit library
     const githubToken = core.getInput("github-token", { required: true });
@@ -938,7 +940,7 @@ async function run() {
 
     const conclusion = numErrors > maxErrors ? "failure" : "success";
 
-    await submitResult(githubToken, octokit, conclusion, annotations);
+    await submitResult(octokit, checkName,conclusion, annotations);
   } catch (error) {
     console.log(error);
     core.setFailed(error.message);
@@ -6152,6 +6154,12 @@ function convertBody(buffer, headers) {
 	// html4
 	if (!res && str) {
 		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
+		if (!res) {
+			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
+			if (res) {
+				res.pop(); // drop last quote
+			}
+		}
 
 		if (res) {
 			res = /charset=(.*)/i.exec(res.pop());
@@ -7159,7 +7167,7 @@ function fetch(url, opts) {
 				// HTTP fetch step 5.5
 				switch (request.redirect) {
 					case 'error':
-						reject(new FetchError(`redirect mode is set to error: ${request.url}`, 'no-redirect'));
+						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
 						finalize();
 						return;
 					case 'manual':
@@ -7198,7 +7206,8 @@ function fetch(url, opts) {
 							method: request.method,
 							body: request.body,
 							signal: request.signal,
-							timeout: request.timeout
+							timeout: request.timeout,
+							size: request.size
 						};
 
 						// HTTP-redirect fetch step 9
