@@ -13,6 +13,11 @@ inputs:
     default: "."
   diff-against-branch:
     description: "Only check files that have been modified from the given branch"
+  check-name:
+    description: >-
+      The name of the check to add annotations to.
+      Useful to distinguish between Python versions in a build matrix.
+    default: Mypy
 outputs:
   num-errors: 
     description: 'Number of errors reported'
